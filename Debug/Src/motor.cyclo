@@ -1,0 +1,6 @@
+../Src/motor.c:15:6:motorInit	1
+../Src/motor.c:72:6:moveForward	1
+../Src/motor.c:86:6:moveBackward	1
+../Src/motor.c:98:6:turnLeft	1
+../Src/motor.c:114:6:turnRight	1
+../Src/motor.c:130:6:stopMotors	1

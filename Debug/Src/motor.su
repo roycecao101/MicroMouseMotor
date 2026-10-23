@@ -1,0 +1,6 @@
+../Src/motor.c:15:6:motorInit	8	static
+../Src/motor.c:72:6:moveForward	4	static
+../Src/motor.c:86:6:moveBackward	4	static
+../Src/motor.c:98:6:turnLeft	4	static
+../Src/motor.c:114:6:turnRight	4	static
+../Src/motor.c:130:6:stopMotors	4	static
