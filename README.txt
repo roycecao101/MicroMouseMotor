@@ -1,193 +1,162 @@
-Micromouse Motor Control
-Motor-control code for a Micromouse robot using an STM32 NUCLEO-F446RE and a TB6612FNG dual motor driver.
+# Micromouse Motor Control
 
-Overview
-This project currently controls two DC gear motors used for a Micromouse drivetrain.
+Embedded motor-control firmware for a four-wheel Micromouse robot using an **STM32 NUCLEO-F446RE** and **two TB6612FNG dual motor drivers**.
 
-The software has been separated into a reusable motor-control module so that higher-level navigation code can eventually call movement functions without directly handling GPIO registers.
+## Features
 
-Current supported commands include:
+- Four independently driven DC gear motors
+- Forward and reverse motion
+- Left and right pivot turns
+- Motor stop control
+- Separate motor-control module using `motor.c` and `motor.h`
+- Hardware abstraction for future maze-navigation integration
 
-moveForward();
-moveBackward();
-turnLeft();
-turnRight();
-stopMotors();
-Because the motors are mounted on opposite sides of the robot, they must rotate in opposite electrical directions for the robot to move in the same physical direction.
+## Hardware
 
-Hardware
-STM32 NUCLEO-F446RE
-TB6612FNG dual motor driver
-2 DC gear motors
-2 wheels
-4×AA Ni-MH battery pack
-Terminal block adapter
-Jumper wires
-Project Structure
+- STM32 NUCLEO-F446RE
+- 2 × TB6612FNG motor drivers
+- 4 × DC gear motors
+- 4 × wheels
+- 4×AA Ni-MH battery pack
+- Terminal block adapter
+- Jumper wires
+- 3D-printed chassis
+
+## Motor Layout
+
+```text
+              FRONT
+
+      Front Left      Front Right
+          FL              FR
+           |              |
+      Driver #1 A     Driver #1 B
+
+
+       Rear Left       Rear Right
+          RL              RR
+           |              |
+      Driver #2 A     Driver #2 B
+
+               REAR
+```
+
+## Wiring
+
+### TB6612 #1
+
+```text
+A0  (PA0)  → AIN1
+A1  (PA1)  → AIN2
+A3  (PB0)  → PWMA
+
+D2  (PA10) → BIN1
+D3  (PB3)  → BIN2
+D4  (PB5)  → PWMB
+
+A2  (PA4)  → STBY
+```
+
+Motor outputs:
+
+```text
+AO1 / AO2 → Front Left
+BO1 / BO2 → Front Right
+```
+
+### TB6612 #2
+
+```text
+D7  (PA8)  → AIN1
+D8  (PA9)  → AIN2
+D5  (PB4)  → PWMA
+
+D9  (PC7)  → BIN1
+D10 (PB6)  → BIN2
+D6  (PB10) → PWMB
+
+D11 (PA7)  → STBY
+```
+
+Motor outputs:
+
+```text
+AO1 / AO2 → Rear Left
+BO1 / BO2 → Rear Right
+```
+
+## Power
+
+```text
+Nucleo 3V3 → VCC on both TB6612 boards
+Nucleo GND → GND on both TB6612 boards
+
+Battery +  → VM on both TB6612 boards
+Battery -  → GND on both TB6612 boards
+```
+
+The Nucleo, motor drivers, and battery supply share a common ground.
+
+## Project Structure
+
+```text
 Micromouse_Project/
 ├── Inc/
 │   └── motor.h
-│
 └── Src/
     ├── main.c
     └── motor.c
-motor.h
-Defines the motor-control functions available to the rest of the project.
+```
 
-#ifndef MOTOR_H
-#define MOTOR_H
+`motor.c` contains the low-level STM32 and TB6612 control logic.
 
+`motor.h` exposes a simple movement interface:
+
+```c
 void motorInit(void);
-
 void moveForward(void);
 void moveBackward(void);
-
 void turnLeft(void);
 void turnRight(void);
-
 void stopMotors(void);
+```
 
-#endif
+This allows higher-level navigation code to control the robot without directly manipulating GPIO registers.
+
+## Current Status
+
+- [x] STM32 GPIO setup
+- [x] Dual TB6612 integration
+- [x] Four-motor operation
+- [x] Forward motion
+- [x] Reverse motion
+- [x] Left/right pivot turns
+- [x] Stop control
+- [x] Modular motor-control interface
+- [ ] PWM speed control
+- [ ] Precise 90° turning
+- [ ] Final chassis integration
+- [ ] Encoder feedback
+- [ ] Wall/distance sensors
+- [ ] Closed-loop control
+- [ ] Maze-navigation integration
+
+## Roadmap
+
+The next stage is adding **PWM speed control and more precise turning**. After that, the motor-control layer will be integrated with the higher-level maze-navigation software.
+
+```text
+Maze Navigation
+      ↓
+Motor Commands
+      ↓
+motor.h
+      ↓
 motor.c
-Contains the low-level STM32 GPIO configuration and TB6612 motor-control logic.
-
-This file is responsible for:
-
-Configuring motor-control GPIO pins
-Enabling the TB6612
-Controlling Motor A
-Controlling Motor B
-Forward motion
-Reverse motion
-Pivot turns
-Stopping both motors
-main.c
-Acts as the current test driver.
-
-Instead of directly changing GPIO registers, main.c calls the higher-level functions defined in motor.h.
-
-Example:
-
-#include "motor.h"
-
-void delay(void)
-{
-    for (volatile int i = 0; i < 3000000; i++);
-}
-
-int main(void)
-{
-    motorInit();
-
-    while (1)
-    {
-        moveForward();
-        delay();
-
-        stopMotors();
-        delay();
-
-        turnLeft();
-        delay();
-
-        stopMotors();
-        delay();
-
-        turnRight();
-        delay();
-
-        stopMotors();
-        delay();
-    }
-}
-Wiring
-Motor A
-Nucleo A0  → TB6612 AIN1
-Nucleo A1  → TB6612 AIN2
-Nucleo A3  → TB6612 PWMA
-
-TB6612 AO1/AO2 → Motor A
-Motor B
-Nucleo D2  → TB6612 BIN1
-Nucleo D3  → TB6612 BIN2
-Nucleo D4  → TB6612 PWMB
-
-TB6612 BO1/BO2 → Motor B
-Shared Control and Power
-Nucleo A2   → TB6612 STBY
-Nucleo 3V3  → TB6612 VCC
-Nucleo GND  → TB6612 GND
-
-Battery +   → TB6612 VM
-Battery -   → TB6612 GND
-The Nucleo and battery pack share a common ground through the TB6612.
-
-STM32 Pin Mapping
-A0 = PA0
-A1 = PA1
-A2 = PA4
-A3 = PB0
-
-D2 = PA10
-D3 = PB3
-D4 = PB5
-Motor Control
-Forward
-Both wheels drive the robot in the same physical direction.
-
-Motor A → one electrical direction
-Motor B → opposite electrical direction
-Backward
-Both motor directions are reversed.
-
-Left Turn
-The current implementation performs a pivot turn:
-
-Left-side motor  → backward
-Right-side motor → forward
-Right Turn
-Left-side motor  → forward
-Right-side motor → backward
-Stop
-Both motor direction inputs are set LOW.
-
-Current Status
- Nucleo programming and ST-LINK setup
- GPIO experiments
- TB6612 motor-driver integration
- Battery-powered motor testing
- Single-wheel control
- Two-wheel control
- Continuous forward motion
- Forward function
- Backward function
- Stop function
- Left-turn function
- Right-turn function
- Separate motor.c motor-control module
- Separate motor.h interface
- main.c test driver
- PWM speed control
- More precise 90° turns
- 3D-printed chassis integration
- Sensor integration
- Encoder feedback
- Closed-loop motor control
- Maze-navigation integration
-Roadmap
-The next major improvement is PWM speed control. Instead of running both motors at full power, PWM will allow each wheel to run at a controlled speed.
-
-This will make it possible to improve turning behavior and compensate for differences between the two motors.
-
-The motor-control interface can eventually be called by the higher-level maze-navigation software:
-
-moveForward();
-
-if (nextMove == LEFT)
-{
-    turnLeft();
-}
-This keeps the navigation software separate from the low-level STM32 and TB6612 hardware implementation.
-
-Goal
-The long-term goal is to integrate this physical motor-control system with the Micromouse maze-navigation software so that navigation decisions can directly command the robot's wheels.
+      ↓
+STM32 GPIO / PWM
+      ↓
+TB6612 Drivers
+      ↓
+Four Motors
+```
